@@ -2,10 +2,10 @@ import meta from "../../../src/pages/_meta.tsx";
 export const pageMap = [{
   data: meta
 }, {
-  name: "api",
-  route: "/api",
+  name: "api-reference",
+  route: "/api-reference",
   frontMatter: {
-    "sidebarTitle": "API"
+    "sidebarTitle": "API Reference"
   }
 }, {
   name: "architecture",
