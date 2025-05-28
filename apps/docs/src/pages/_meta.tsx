@@ -4,6 +4,7 @@ export default {
   architecture: '🏗️ Architecture',
   features: '🎯 Features',
   examples: '💡 Examples',
+  governor: '🎛️ Governor System',
   'api-reference': '📚 API Reference',
   contributing: '🤝 Contributing',
 };

@@ -1,0 +1,436 @@
+# Governor API Reference
+
+This page provides a comprehensive API reference for the Governor system components.
+
+## Core Components
+
+### Governor Class
+
+The main orchestrator class responsible for coordinating all governor operations.
+
+```typescript
+class Governor {
+  constructor(config: GovernorConfig)
+  start(): Promise<void>
+  stop(): Promise<void>
+  dispatchTask(task: Task): Promise<void>
+}
+```
+
+#### Methods
+
+- **`constructor(config: GovernorConfig)`** - Initializes the Governor with provided configuration
+- **`start()`** - Begins the governor's operation loop
+- **`stop()`** - Terminates the governor's operation loop
+- **`dispatchTask(task: Task)`** - Handles the dispatching of tasks to appropriate modules
+
+### GovernorConfig Interface
+
+Configuration schema for initializing the Governor.
+
+```typescript
+interface GovernorConfig {
+  maxConcurrentTasks: number
+  retryAttempts: number
+  contextSize: number
+  adaptationEnabled: boolean
+  errorThreshold: number
+}
+
+function validateConfig(config: Partial<GovernorConfig>): GovernorConfig
+```
+
+### GovernorState Interface
+
+Represents the serializable state of the Governor.
+
+```typescript
+interface GovernorState {
+  currentTasks: Task[]
+  context: ContextSnapshot
+  metrics: PerformanceMetrics
+  timestamp: number
+}
+
+function saveState(): GovernorState
+function loadState(state: GovernorState): void
+```
+
+## Context Management
+
+### ContextManager Class
+
+Manages context data lifecycle and operations.
+
+```typescript
+class ContextManager {
+  getContext(): ContextSnapshot
+  updateContext(update: ContextUpdate): void
+  clearContext(): void
+}
+```
+
+#### Methods
+
+- **`getContext()`** - Retrieves the current context snapshot
+- **`updateContext(update: ContextUpdate)`** - Applies updates to the context
+- **`clearContext()`** - Clears all context data
+
+### Context Types
+
+```typescript
+namespace ContextTypes {
+  interface ContextSnapshot {
+    data: Record<string, any>
+    timestamp: number
+    version: string
+  }
+
+  interface ContextUpdate {
+    key: string
+    value: any
+    operation: 'set' | 'delete' | 'merge'
+  }
+
+  interface Summary {
+    keyPoints: string[]
+    metrics: Record<string, number>
+    recommendations: string[]
+  }
+}
+```
+
+### Summarizer Functions
+
+```typescript
+function summarizeContext(context: ContextSnapshot): Summary
+```
+
+### Snapshot Functions
+
+```typescript
+function createSnapshot(): ContextSnapshot
+function restoreSnapshot(snapshot: ContextSnapshot): void
+```
+
+## Adaptation System
+
+### AdaptiveController Class
+
+Controls adaptive behavior of the Governor based on performance metrics.
+
+```typescript
+class AdaptiveController {
+  adjustParameters(metrics: PerformanceMetrics): void
+  getAdaptationState(): AdaptationState
+  resetAdaptation(): void
+}
+```
+
+#### Methods
+
+- **`adjustParameters(metrics: PerformanceMetrics)`** - Modifies parameters based on metrics
+- **`getAdaptationState()`** - Returns current adaptation state
+- **`resetAdaptation()`** - Resets adaptation to default state
+
+### FeedbackLoop Class
+
+Handles feedback collection and processing for adaptive behavior.
+
+```typescript
+class FeedbackLoop {
+  collectFeedback(): PerformanceMetrics
+  processFeedback(metrics: PerformanceMetrics): void
+  getFeedbackHistory(): PerformanceMetrics[]
+}
+```
+
+#### Methods
+
+- **`collectFeedback()`** - Gathers performance metrics
+- **`processFeedback(metrics: PerformanceMetrics)`** - Processes metrics to inform adaptations
+- **`getFeedbackHistory()`** - Returns historical feedback data
+
+### Heuristics Functions
+
+```typescript
+function evaluateHeuristics(metrics: PerformanceMetrics): Adjustment
+```
+
+### Adaptation Types
+
+```typescript
+namespace AdaptationTypes {
+  interface PerformanceMetrics {
+    executionTime: number
+    memoryUsage: number
+    errorRate: number
+    throughput: number
+  }
+
+  interface Adjustment {
+    parameter: string
+    value: number
+    reason: string
+  }
+
+  interface AdaptationState {
+    enabled: boolean
+    lastAdjustment: Date
+    adjustmentCount: number
+  }
+}
+```
+
+## Task Management
+
+### TaskScheduler Class
+
+Handles task queueing and scheduling based on priority and dependencies.
+
+```typescript
+class TaskScheduler {
+  scheduleTask(task: Task): void
+  getNextTask(): Task | null
+  cancelTask(taskId: string): boolean
+  getQueueStatus(): QueueStatus
+}
+```
+
+#### Methods
+
+- **`scheduleTask(task: Task)`** - Adds a task to the schedule
+- **`getNextTask()`** - Retrieves the next task to execute
+- **`cancelTask(taskId: string)`** - Cancels a scheduled task
+- **`getQueueStatus()`** - Returns current queue status
+
+### TaskGraph Class
+
+Manages task dependencies and execution order.
+
+```typescript
+class TaskGraph {
+  addTask(task: Task): void
+  resolveDependencies(task: Task): Task[]
+  removeTask(taskId: string): void
+  validateGraph(): boolean
+}
+```
+
+#### Methods
+
+- **`addTask(task: Task)`** - Adds a task to the graph
+- **`resolveDependencies(task: Task)`** - Determines the execution order based on dependencies
+- **`removeTask(taskId: string)`** - Removes a task from the graph
+- **`validateGraph()`** - Validates the dependency graph for cycles
+
+### Task Types
+
+```typescript
+namespace TaskTypes {
+  interface Task {
+    id: string
+    type: string
+    priority: number
+    dependencies: string[]
+    payload: any
+    status: TaskStatus
+  }
+
+  interface Dependency {
+    fromTaskId: string
+    toTaskId: string
+    type: 'blocking' | 'optional'
+  }
+
+  interface QueueStatus {
+    pending: number
+    running: number
+    completed: number
+    failed: number
+  }
+
+  type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+}
+```
+
+## Error Handling
+
+### RetryPolicy Class
+
+Manages retry logic for failed tasks with configurable strategies.
+
+```typescript
+class RetryPolicy {
+  shouldRetry(error: Error, attempt: number): boolean
+  getRetryDelay(attempt: number): number
+  getMaxAttempts(): number
+  setStrategy(strategy: RetryStrategy): void
+}
+```
+
+#### Methods
+
+- **`shouldRetry(error: Error, attempt: number)`** - Determines if a task should be retried
+- **`getRetryDelay(attempt: number)`** - Calculates delay before next retry
+- **`getMaxAttempts()`** - Returns maximum retry attempts
+- **`setStrategy(strategy: RetryStrategy)`** - Sets the retry strategy
+
+### FaultClassifier Class
+
+Classifies errors to determine appropriate handling strategies.
+
+```typescript
+class FaultClassifier {
+  classifyError(error: Error): ErrorClassification
+  isRetryable(error: Error): boolean
+  getSeverity(error: Error): ErrorSeverity
+}
+```
+
+#### Methods
+
+- **`classifyError(error: Error)`** - Classifies an error by type and severity
+- **`isRetryable(error: Error)`** - Determines if an error is retryable
+- **`getSeverity(error: Error)`** - Returns error severity level
+
+### Error Types
+
+```typescript
+namespace ErrorTypes {
+  interface ErrorClassification {
+    type: ErrorType
+    severity: ErrorSeverity
+    retryable: boolean
+    category: string
+  }
+
+  type ErrorType = 'network' | 'timeout' | 'validation' | 'system' | 'unknown'
+  type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical'
+
+  interface RetryStrategy {
+    maxAttempts: number
+    baseDelay: number
+    backoffMultiplier: number
+    jitter: boolean
+  }
+}
+```
+
+## Module Exports
+
+### Core Module
+
+```typescript
+// governor/core/index.ts
+export { Governor } from './Governor'
+export { GovernorConfig, validateConfig } from './GovernorConfig'
+export { GovernorState, saveState, loadState } from './GovernorState'
+```
+
+### Context Module
+
+```typescript
+// governor/modules/context/index.ts
+export { ContextManager } from './ContextManager'
+export { summarizeContext } from './Summarizer'
+export { createSnapshot, restoreSnapshot } from './Snapshot'
+export { ContextTypes } from './types'
+```
+
+### Adaptation Module
+
+```typescript
+// governor/modules/adaptation/index.ts
+export { AdaptiveController } from './AdaptiveController'
+export { evaluateHeuristics } from './Heuristics'
+export { FeedbackLoop } from './FeedbackLoop'
+export { AdaptationTypes } from './types'
+```
+
+### Tasks Module
+
+```typescript
+// governor/modules/tasks/index.ts
+export { TaskScheduler } from './TaskScheduler'
+export { TaskGraph } from './TaskGraph'
+export { TaskTypes } from './types'
+```
+
+### Error Module
+
+```typescript
+// governor/modules/error/index.ts
+export { RetryPolicy } from './RetryPolicy'
+export { FaultClassifier } from './FaultClassifier'
+export { ErrorTypes } from './types'
+```
+
+### Main Governor Export
+
+```typescript
+// governor/index.ts
+export { Governor as default } from './core/Governor'
+export * from './core'
+export * from './modules/context'
+export * from './modules/adaptation'
+export * from './modules/tasks'
+export * from './modules/error'
+```
+
+## Usage Examples
+
+### Basic Governor Setup
+
+```typescript
+import Governor, { GovernorConfig } from './governor'
+
+const config: GovernorConfig = {
+  maxConcurrentTasks: 10,
+  retryAttempts: 3,
+  contextSize: 1000,
+  adaptationEnabled: true,
+  errorThreshold: 0.1
+}
+
+const governor = new Governor(config)
+await governor.start()
+```
+
+### Task Scheduling
+
+```typescript
+import { TaskScheduler, TaskTypes } from './governor/modules/tasks'
+
+const scheduler = new TaskScheduler()
+const task: TaskTypes.Task = {
+  id: 'task-1',
+  type: 'process',
+  priority: 1,
+  dependencies: [],
+  payload: { data: 'example' },
+  status: 'pending'
+}
+
+scheduler.scheduleTask(task)
+const nextTask = scheduler.getNextTask()
+```
+
+### Error Handling
+
+```typescript
+import { RetryPolicy, FaultClassifier } from './governor/modules/error'
+
+const retryPolicy = new RetryPolicy()
+const classifier = new FaultClassifier()
+
+try {
+  // Task execution
+} catch (error) {
+  const classification = classifier.classifyError(error)
+  if (retryPolicy.shouldRetry(error, attemptCount)) {
+    const delay = retryPolicy.getRetryDelay(attemptCount)
+    // Schedule retry after delay
+  }
+}
+```

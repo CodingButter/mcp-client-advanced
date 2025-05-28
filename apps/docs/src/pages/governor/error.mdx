@@ -1,0 +1,606 @@
+# 🛡️ Error Handling & Recovery
+
+The error handling module provides comprehensive fault tolerance, intelligent error classification, and sophisticated recovery strategies to maintain system reliability.
+
+## 📁 Error Module Structure
+
+```
+governor/modules/error/
+├── RetryPolicy.ts       # Retry strategies and backoff algorithms
+├── FaultClassifier.ts   # Error classification and severity assessment
+├── types.ts            # TypeScript type definitions
+└── index.ts            # Module exports
+```
+
+## 🔄 RetryPolicy (`RetryPolicy.ts`)
+
+The core component responsible for implementing intelligent retry strategies with various backoff algorithms and failure recovery mechanisms.
+
+### Class Definition
+
+```typescript
+class RetryPolicy {
+  private config: RetryConfig;
+  private classifier: FaultClassifier;
+  private metrics: RetryMetrics;
+  private activeRetries: Map<string, RetryState>;
+  
+  constructor(config: RetryConfig)
+  shouldRetry(error: Error, attempt: number, task: Task): boolean
+  getRetryDelay(attempt: number, strategy: BackoffStrategy): number
+  executeWithRetry<T>(operation: () => Promise<T>, task: Task): Promise<T>
+  cancelRetry(taskId: string): void
+  getRetryStatistics(): RetryStatistics
+}
+```
+
+### Core Functionality
+
+#### Retry Decision Logic
+```typescript
+shouldRetry(error: Error, attempt: number, task: Task): boolean {
+  // 1. Check retry limits
+  if (attempt >= this.getMaxRetries(task)) {
+    return false;
+  }
+  
+  // 2. Classify error type
+  const classification = this.classifier.classify(error);
+  
+  // 3. Check if error type is retryable
+  if (!this.isRetryableError(classification)) {
+    return false;
+  }
+  
+  // 4. Check circuit breaker status
+  if (this.isCircuitBreakerOpen(task.type)) {
+    return false;
+  }
+  
+  // 5. Check resource availability
+  if (!this.hasAvailableResources(task)) {
+    return false;
+  }
+  
+  // 6. Apply business logic constraints
+  return this.applyBusinessRules(error, attempt, task);
+}
+```
+
+#### Retry Execution
+```typescript
+async executeWithRetry<T>(operation: () => Promise<T>, task: Task): Promise<T> {
+  let lastError: Error;
+  let attempt = 0;
+  
+  while (attempt <= this.getMaxRetries(task)) {
+    try {
+      // Record attempt start
+      this.recordAttemptStart(task.id, attempt);
+      
+      // Execute the operation
+      const result = await this.executeWithTimeout(operation, task.timeout);
+      
+      // Record success
+      this.recordSuccess(task.id, attempt);
+      
+      return result;
+      
+    } catch (error) {
+      lastError = error;
+      
+      // Record failure
+      this.recordFailure(task.id, attempt, error);
+      
+      // Check if we should retry
+      if (!this.shouldRetry(error, attempt, task)) {
+        break;
+      }
+      
+      // Calculate and wait for retry delay
+      const delay = this.getRetryDelay(attempt, task.retryStrategy);
+      await this.sleep(delay);
+      
+      attempt++;
+    }
+  }
+  
+  // All retries exhausted
+  throw new RetryExhaustedException(task.id, attempt, lastError);
+}
+```
+
+### Backoff Strategies
+
+#### **Exponential Backoff**
+```typescript
+class ExponentialBackoff implements BackoffStrategy {
+  calculate(attempt: number, baseDelay: number, maxDelay: number): number {
+    const delay = baseDelay * Math.pow(2, attempt);
+    const jitter = Math.random() * 0.1 * delay; // 10% jitter
+    return Math.min(delay + jitter, maxDelay);
+  }
+}
+```
+
+#### **Linear Backoff**
+```typescript
+class LinearBackoff implements BackoffStrategy {
+  calculate(attempt: number, baseDelay: number, maxDelay: number): number {
+    const delay = baseDelay * (attempt + 1);
+    const jitter = Math.random() * 0.1 * delay;
+    return Math.min(delay + jitter, maxDelay);
+  }
+}
+```
+
+#### **Fixed Backoff**
+```typescript
+class FixedBackoff implements BackoffStrategy {
+  calculate(attempt: number, baseDelay: number, maxDelay: number): number {
+    const jitter = Math.random() * 0.1 * baseDelay;
+    return baseDelay + jitter;
+  }
+}
+```
+
+#### **Fibonacci Backoff**
+```typescript
+class FibonacciBackoff implements BackoffStrategy {
+  private fibonacciCache = [1, 1];
+  
+  calculate(attempt: number, baseDelay: number, maxDelay: number): number {
+    const fibNumber = this.getFibonacci(attempt);
+    const delay = baseDelay * fibNumber;
+    const jitter = Math.random() * 0.1 * delay;
+    return Math.min(delay + jitter, maxDelay);
+  }
+  
+  private getFibonacci(n: number): number {
+    while (this.fibonacciCache.length <= n) {
+      const len = this.fibonacciCache.length;
+      this.fibonacciCache[len] = this.fibonacciCache[len - 1] + this.fibonacciCache[len - 2];
+    }
+    return this.fibonacciCache[n];
+  }
+}
+```
+
+### Retry Policies
+
+#### **Task-Specific Policies**
+```typescript
+interface TaskRetryPolicy {
+  taskType: string;
+  maxRetries: number;
+  backoffStrategy: BackoffStrategy;
+  baseDelay: number;
+  maxDelay: number;
+  retryableErrors: ErrorPattern[];
+  circuitBreakerConfig: CircuitBreakerConfig;
+}
+```
+
+#### **Error-Specific Policies**
+```typescript
+interface ErrorRetryPolicy {
+  errorType: string;
+  errorPattern: RegExp;
+  retryable: boolean;
+  maxRetries: number;
+  customBackoff?: BackoffStrategy;
+  specialHandling?: (error: Error) => RetryDecision;
+}
+```
+
+## 🎯 FaultClassifier (`FaultClassifier.ts`)
+
+Intelligently classifies errors to determine appropriate handling strategies based on error types, patterns, and severity levels.
+
+### Class Definition
+
+```typescript
+class FaultClassifier {
+  private patterns: ErrorPattern[];
+  private learningModel: ClassificationModel;
+  private config: ClassifierConfig;
+  
+  constructor(config: ClassifierConfig)
+  classify(error: Error): ErrorClassification
+  addPattern(pattern: ErrorPattern): void
+  updateModel(feedback: ClassificationFeedback): void
+  getClassificationHistory(): ClassificationRecord[]
+}
+```
+
+### Error Classification
+
+```typescript
+classify(error: Error): ErrorClassification {
+  // 1. Extract error features
+  const features = this.extractErrorFeatures(error);
+  
+  // 2. Apply pattern matching
+  const patternMatch = this.matchPatterns(error);
+  
+  // 3. Use machine learning classification
+  const mlClassification = this.learningModel.classify(features);
+  
+  // 4. Combine results with confidence weighting
+  const classification = this.combineClassifications(
+    patternMatch,
+    mlClassification,
+    features
+  );
+  
+  // 5. Apply business rules
+  return this.applyBusinessRules(classification, error);
+}
+```
+
+### Error Categories
+
+#### **Transient Errors**
+```typescript
+interface TransientError {
+  category: 'transient';
+  retryable: true;
+  expectedDuration: number;    // How long before retry should succeed
+  confidence: number;          // 0.0 - 1.0
+  
+  subCategories: [
+    'network-timeout',
+    'service-unavailable', 
+    'rate-limited',
+    'resource-contention',
+    'temporary-failure'
+  ];
+}
+```
+
+#### **Permanent Errors**
+```typescript
+interface PermanentError {
+  category: 'permanent';
+  retryable: false;
+  requiresIntervention: boolean;
+  confidence: number;
+  
+  subCategories: [
+    'authentication-failure',
+    'authorization-denied',
+    'invalid-input',
+    'resource-not-found',
+    'configuration-error'
+  ];
+}
+```
+
+#### **Intermittent Errors**
+```typescript
+interface IntermittentError {
+  category: 'intermittent';
+  retryable: true;
+  pattern: 'random' | 'periodic' | 'load-dependent';
+  confidence: number;
+  
+  subCategories: [
+    'flaky-service',
+    'race-condition',
+    'timing-dependent',
+    'load-related'
+  ];
+}
+```
+
+#### **Systemic Errors**
+```typescript
+interface SystemicError {
+  category: 'systemic';
+  retryable: false;
+  scope: 'service' | 'system' | 'infrastructure';
+  escalationRequired: boolean;
+  
+  subCategories: [
+    'service-down',
+    'infrastructure-failure',
+    'dependency-failure',
+    'capacity-exceeded'
+  ];
+}
+```
+
+### Classification Patterns
+
+#### **Error Message Patterns**
+```typescript
+const ERROR_PATTERNS: ErrorPattern[] = [
+  {
+    name: 'Network Timeout',
+    pattern: /timeout|ETIMEDOUT|ECONNRESET/i,
+    classification: {
+      category: 'transient',
+      retryable: true,
+      severity: 'medium',
+      expectedRecoveryTime: 5000
+    }
+  },
+  
+  {
+    name: 'Rate Limiting',
+    pattern: /rate.?limit|too many requests|429/i,
+    classification: {
+      category: 'transient',
+      retryable: true,
+      severity: 'low',
+      customBackoff: 'exponential-with-ceiling'
+    }
+  },
+  
+  {
+    name: 'Authentication Error',
+    pattern: /unauthorized|authentication|401/i,
+    classification: {
+      category: 'permanent',
+      retryable: false,
+      severity: 'high',
+      requiresIntervention: true
+    }
+  }
+];
+```
+
+#### **HTTP Status Code Mapping**
+```typescript
+const HTTP_STATUS_CLASSIFICATION: Record<number, ErrorClassification> = {
+  // 4xx Client Errors
+  400: { category: 'permanent', retryable: false, severity: 'high' },
+  401: { category: 'permanent', retryable: false, severity: 'high' },
+  403: { category: 'permanent', retryable: false, severity: 'high' },
+  404: { category: 'permanent', retryable: false, severity: 'medium' },
+  429: { category: 'transient', retryable: true, severity: 'low' },
+  
+  // 5xx Server Errors
+  500: { category: 'intermittent', retryable: true, severity: 'high' },
+  502: { category: 'transient', retryable: true, severity: 'medium' },
+  503: { category: 'transient', retryable: true, severity: 'medium' },
+  504: { category: 'transient', retryable: true, severity: 'medium' }
+};
+```
+
+### Machine Learning Classification
+
+#### **Feature Extraction**
+```typescript
+extractErrorFeatures(error: Error): ErrorFeatures {
+  return {
+    // Basic features
+    message: error.message,
+    type: error.constructor.name,
+    stack: error.stack?.split('\n').slice(0, 5),
+    
+    // Contextual features
+    timestamp: Date.now(),
+    taskType: this.getCurrentTaskType(),
+    systemLoad: this.getSystemLoad(),
+    recentErrorRate: this.getRecentErrorRate(),
+    
+    // Derived features
+    messageLength: error.message.length,
+    hasStatusCode: /\d{3}/.test(error.message),
+    hasTimeout: /timeout/i.test(error.message),
+    hasNetwork: /network|connection/i.test(error.message),
+    
+    // Historical features
+    previousOccurrences: this.getPreviousOccurrences(error),
+    timeSinceLastOccurrence: this.getTimeSinceLastOccurrence(error)
+  };
+}
+```
+
+#### **Model Training**
+```typescript
+updateModel(feedback: ClassificationFeedback): void {
+  // Collect training data from classification feedback
+  const trainingData = this.collectTrainingData(feedback);
+  
+  // Update model with new data
+  this.learningModel.updateWeights(trainingData);
+  
+  // Validate model performance
+  const performance = this.validateModel();
+  
+  // Adjust confidence thresholds if needed
+  if (performance.accuracy < this.config.minAccuracy) {
+    this.adjustConfidenceThresholds();
+  }
+}
+```
+
+## 🔄 Circuit Breaker Pattern
+
+### Circuit Breaker Implementation
+```typescript
+class CircuitBreaker {
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+  private failureCount = 0;
+  private lastFailureTime = 0;
+  private successCount = 0;
+  
+  constructor(private config: CircuitBreakerConfig) {}
+  
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === 'open') {
+      if (this.shouldAttemptReset()) {
+        this.state = 'half-open';
+      } else {
+        throw new CircuitBreakerOpenError();
+      }
+    }
+    
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+  
+  private onSuccess(): void {
+    this.failureCount = 0;
+    
+    if (this.state === 'half-open') {
+      this.successCount++;
+      if (this.successCount >= this.config.halfOpenSuccessThreshold) {
+        this.state = 'closed';
+        this.successCount = 0;
+      }
+    }
+  }
+  
+  private onFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.config.failureThreshold) {
+      this.state = 'open';
+    }
+  }
+}
+```
+
+## 🏗️ Type Definitions (`types.ts`)
+
+```typescript
+namespace ErrorTypes {
+  interface ErrorClassification {
+    category: 'transient' | 'permanent' | 'intermittent' | 'systemic';
+    retryable: boolean;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    confidence: number;          // 0.0 - 1.0
+    expectedRecoveryTime?: number; // Milliseconds
+    requiresIntervention?: boolean;
+    escalationLevel?: 'none' | 'team' | 'manager' | 'executive';
+  }
+
+  interface RetryState {
+    taskId: string;
+    attempt: number;
+    startTime: number;
+    lastAttemptTime: number;
+    nextAttemptTime: number;
+    backoffStrategy: BackoffStrategy;
+    errors: Error[];
+    success?: boolean;
+  }
+
+  interface ErrorPattern {
+    name: string;
+    pattern: RegExp;
+    classification: ErrorClassification;
+    customHandler?: (error: Error) => void;
+    priority: number;
+  }
+
+  interface CircuitBreakerConfig {
+    failureThreshold: number;      // Failures before opening
+    resetTimeout: number;          // Time before attempting reset
+    halfOpenSuccessThreshold: number; // Successes to close from half-open
+    monitoringWindow: number;      // Window for failure counting
+  }
+}
+```
+
+## 🔍 Error Recovery Strategies
+
+### **Graceful Degradation**
+```typescript
+class GracefulDegradation {
+  async executeWithFallback<T>(
+    primary: () => Promise<T>,
+    fallback: () => Promise<T>,
+    task: Task
+  ): Promise<T> {
+    try {
+      return await primary();
+    } catch (error) {
+      const classification = this.classifier.classify(error);
+      
+      if (classification.retryable) {
+        return await this.retryPolicy.executeWithRetry(primary, task);
+      } else {
+        this.logDegradation(task.id, error);
+        return await fallback();
+      }
+    }
+  }
+}
+```
+
+### **Bulkhead Pattern**
+```typescript
+class BulkheadIsolation {
+  private isolatedPools: Map<string, ResourcePool> = new Map();
+  
+  isolateFailure(taskType: string, error: Error): void {
+    // Isolate failed task type to separate resource pool
+    const pool = this.getOrCreatePool(taskType);
+    pool.isolate();
+    
+    // Continue serving other task types normally
+    this.maintainOtherPools(taskType);
+  }
+}
+```
+
+### **Compensation Actions**
+```typescript
+class CompensationHandler {
+  async compensate(failedTasks: Task[]): Promise<void> {
+    for (const task of failedTasks) {
+      const compensationAction = this.getCompensationAction(task);
+      if (compensationAction) {
+        await this.executeCompensation(compensationAction);
+      }
+    }
+  }
+}
+```
+
+## 📊 Error Analytics
+
+### **Error Metrics**
+```typescript
+interface ErrorMetrics {
+  totalErrors: number;
+  errorRate: number;           // Errors per minute
+  errorsByCategory: Record<string, number>;
+  errorsBySeverity: Record<string, number>;
+  
+  recovery: {
+    totalRetries: number;
+    successfulRetries: number;
+    averageRetryCount: number;
+    averageRecoveryTime: number;
+  };
+  
+  patterns: {
+    mostCommonErrors: ErrorPattern[];
+    errorTrends: TrendData[];
+    predictedErrors: PredictionData[];
+  };
+}
+```
+
+### **Health Monitoring**
+- Error rate trending
+- Recovery success rates
+- Circuit breaker status
+- Classification accuracy
+- System resilience scoring
+
+---
+
+The Error Handling & Recovery system ensures that the Advanced MCP Client maintains high availability and reliability even in the face of various failure modes, providing intelligent recovery strategies that minimize disruption while maximizing system resilience.

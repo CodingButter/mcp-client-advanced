@@ -1,4 +1,5 @@
 import meta from "../../../src/pages/_meta.tsx";
+import governor_meta from "../../../src/pages/governor/_meta.tsx";
 export const pageMap = [{
   data: meta
 }, {
@@ -36,6 +37,54 @@ export const pageMap = [{
   route: "/getting-started",
   frontMatter: {
     "sidebarTitle": "Getting Started"
+  }
+}, {
+  name: "governor",
+  route: "/governor",
+  children: [{
+    data: governor_meta
+  }, {
+    name: "adaptation",
+    route: "/governor/adaptation",
+    frontMatter: {
+      "sidebarTitle": "Adaptation"
+    }
+  }, {
+    name: "api",
+    route: "/governor/api",
+    frontMatter: {
+      "sidebarTitle": "API"
+    }
+  }, {
+    name: "context",
+    route: "/governor/context",
+    frontMatter: {
+      "sidebarTitle": "Context"
+    }
+  }, {
+    name: "core",
+    route: "/governor/core",
+    frontMatter: {
+      "sidebarTitle": "Core"
+    }
+  }, {
+    name: "error",
+    route: "/governor/error",
+    frontMatter: {
+      "sidebarTitle": "Error"
+    }
+  }, {
+    name: "tasks",
+    route: "/governor/tasks",
+    frontMatter: {
+      "sidebarTitle": "Tasks"
+    }
+  }]
+}, {
+  name: "governor",
+  route: "/governor",
+  frontMatter: {
+    "sidebarTitle": "Governor"
   }
 }, {
   name: "index",
