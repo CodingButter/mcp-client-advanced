@@ -9,7 +9,8 @@ const config: DocsThemeConfig = {
   chat: {
     link: 'https://discord.gg/mcp-client',
   },
-  docsRepositoryBase: 'https://github.com/user/advanced-mcp-client/tree/main/apps/docs',
+  docsRepositoryBase:
+    'https://github.com/user/advanced-mcp-client/tree/main/apps/docs',
   footer: {
     content: (
       <span>
@@ -25,18 +26,16 @@ const config: DocsThemeConfig = {
       </span>
     ),
   },
-  useNextSeoProps() {
-    return {
-      titleTemplate: '%s – Advanced MCP Client'
-    }
-  },
   head: (
     <>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Advanced MCP Client" />
-      <meta property="og:description" content="Revolutionary Model Context Protocol client with intelligent orchestration and massively parallel execution" />
+      <meta
+        property="og:description"
+        content="Revolutionary Model Context Protocol client with intelligent orchestration and massively parallel execution"
+      />
     </>
-  )
+  ),
 };
 
 export default config;
