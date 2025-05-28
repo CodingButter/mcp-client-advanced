@@ -4,6 +4,6 @@ export default {
   architecture: '🏗️ Architecture',
   features: '🎯 Features',
   examples: '💡 Examples',
-  api: '📚 API Reference',
+  'api-reference': '📚 API Reference',
   contributing: '🤝 Contributing',
 };
