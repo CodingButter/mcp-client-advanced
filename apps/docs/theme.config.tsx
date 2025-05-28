@@ -11,6 +11,9 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase:
     'https://github.com/user/advanced-mcp-client/tree/main/apps/docs',
+  sidebar: {
+    defaultMenuCollapseLevel: 1
+  },
   footer: {
     content: (
       <span>
