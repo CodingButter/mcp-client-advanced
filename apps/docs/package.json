@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "next build && touch ../../docs/.nojekyll",
     "start": "next start",
     "dev": "next dev -p 4001",
     "lint": "biome check .",

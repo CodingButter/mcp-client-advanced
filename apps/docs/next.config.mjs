@@ -5,6 +5,12 @@ import nextra from 'nextra';
 const nextConfig = {
   transpilePackages: ['@mcp/ui'],
   reactStrictMode: true,
+  output: 'export',
+  distDir: '../../docs',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
 };
 
 const withNextra = nextra({
