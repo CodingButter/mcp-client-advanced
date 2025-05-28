@@ -57,3 +57,6 @@ next-env.d.ts
 todos.md
 task.md
 temp
+
+# Built documentation (only on docs branch)
+docs/
