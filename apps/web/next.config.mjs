@@ -7,7 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@repo/ui'],
+  transpilePackages: ['@mcp/ui'],
   reactStrictMode: true,
   experimental: {
     turbo: {

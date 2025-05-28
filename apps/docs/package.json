@@ -1,5 +1,5 @@
 {
-  "name": "@repo/docs",
+  "name": "@mcp/docs",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf .next"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
-    "@repo/utils": "workspace:*",
+    "@mcp/ui": "workspace:*",
+    "@mcp/utils": "workspace:*",
     "next": "14.2.29",
     "nextra": "3.0.15",
     "nextra-theme-blog": "3.0.15",
@@ -22,13 +22,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
-    "@repo/tsconfig": "workspace:*",
+    "@mcp/tsconfig": "workspace:*",
     "@types/node": "20.14.15",
     "@types/react": "18.3.13",
     "@types/react-dom": "18.3.1",
     "typescript": "5.5.4",
     "autoprefixer": "10.4.21",
     "postcss": "8.4.49",
-    "tailwindcss": "3.4.17"
+    "tailwindcss": "^4.1.7"
   }
 }

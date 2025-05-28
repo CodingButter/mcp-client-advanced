@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Task",
+      "Batch",
+      "Glob",
+      "Grep",
+      "LS",
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "NotebookRead",
+      "NotebookEdit",
+      "WebFetch",
+      "TodoRead",
+      "TodoWrite",
+      "WebSearch",
+      "mcp__rustybutter-avatar__listAvatarExpressions",
+      "mcp__rustybutter-avatar__setAvatarExpression",
+      "mcp__rustybutter-avatar__setBatchExpressions"
+    ],
+    "deny": []
+  }
+}

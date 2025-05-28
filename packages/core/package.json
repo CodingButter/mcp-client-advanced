@@ -1,0 +1,73 @@
+{
+  "name": "@mcp/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Advanced MCP Client Core - Central Governor, parallel execution engine, and intelligent orchestration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./governor": {
+      "types": "./dist/governor/index.d.ts",
+      "default": "./dist/governor/index.js"
+    },
+    "./executor": {
+      "types": "./dist/executor/index.d.ts",
+      "default": "./dist/executor/index.js"
+    },
+    "./scheduler": {
+      "types": "./dist/scheduler/index.d.ts",
+      "default": "./dist/scheduler/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "zod": "^3.22.4",
+    "eventemitter3": "^5.0.1",
+    "uuid": "^9.0.1",
+    "p-queue": "^8.0.1",
+    "p-limit": "^5.0.0",
+    "rxjs": "^7.8.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/uuid": "^9.0.7",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0"
+  },
+  "tsup": {
+    "entry": {
+      "index": "src/index.ts",
+      "governor/index": "src/governor/index.ts",
+      "executor/index": "src/executor/index.ts",
+      "scheduler/index": "src/scheduler/index.ts",
+      "types/index": "src/types/index.ts"
+    },
+    "outDir": "dist",
+    "format": ["cjs", "esm"],
+    "target": "node18",
+    "clean": true,
+    "dts": true,
+    "sourcemap": true,
+    "splitting": true
+  }
+}

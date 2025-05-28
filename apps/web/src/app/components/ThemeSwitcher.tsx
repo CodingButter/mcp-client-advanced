@@ -3,7 +3,7 @@
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-app-theme/use-theme';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@mcp/ui/components/ui/button';
 
 export default function ThemeSwitcher() {
   const { theme, toggleTheme } = useTheme();

@@ -1,7 +1,7 @@
 {
-  "name": "@repo/ui",
+  "name": "@mcp/ui",
   "version": "0.0.0",
-  "description": "UI",
+  "description": "Advanced MCP Client UI Components - ShadCN/UI components for dashboard and interfaces",
   "private": true,
   "scripts": {
     "ui:add": "bunx shadcn-ui@latest add",
@@ -12,12 +12,12 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
-    "@repo/tsconfig": "workspace:*",
+    "@mcp/tsconfig": "workspace:*",
     "@types/node": "20.14.15",
     "@types/react": "18.3.23",
     "autoprefixer": "10.4.21",
     "postcss": "8.4.49",
-    "tailwindcss": "3.4.17",
+    "tailwindcss": "^4.1.7",
     "typescript": "5.5.4"
   },
   "dependencies": {
@@ -27,7 +27,7 @@
     "clsx": "2.1.1",
     "lucide-react": "0.408.0",
     "tailwind-merge": "2.4.0",
-    "tailwindcss-animate": "1.0.7"
+    "@tailwindcss/typography": "^0.5.16"
   },
   "exports": {
     "./globals.css": "./src/globals.css",

@@ -1,33 +1,44 @@
 {
-  "name": "turborepo-next-shadcn-ui",
+  "name": "advanced-mcp-client",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gmickel/turborepo-shadcn-nextjs"
+    "url": "https://github.com/your-org/advanced-mcp-client"
   },
+  "description": "Revolutionary Model Context Protocol Client with Intelligent Orchestration and Massively Parallel Execution",
   "keywords": [
-    "starter",
-    "template",
+    "mcp",
+    "model-context-protocol",
+    "parallel-execution",
+    "ai-client",
     "turborepo",
-    "biome",
-    "shadcn/cn",
-    "nextjs"
+    "typescript",
+    "shadcn",
+    "nextjs",
+    "cli"
   ],
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter='!@mcp/storybook'",
+    "dev:all": "turbo dev",
     "lint": "turbo lint",
     "lint:fix": "turbo lint:fix",
     "clean": "turbo clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo build --filter=docs^... && changeset publish",
-    "ui:add:component": "turbo ui:add --filter=@repo/ui --",
+    "ui:add:component": "turbo ui:add --filter=@mcp/ui --",
     "prepare": "lefthook install",
-    "storybook": "turbo dev --filter=@repo/storybook",
-    "build:storybook": "turbo build --filter=@repo/storybook",
+    "storybook": "turbo dev --filter=@mcp/storybook",
+    "build:storybook": "turbo build --filter=@mcp/storybook",
+    "cli": "turbo dev --filter=@mcp/cli",
+    "cli:build": "turbo build --filter=@mcp/cli",
+    "server": "turbo dev --filter=@mcp/server",
+    "server:build": "turbo build --filter=@mcp/server",
+    "docs:dev": "turbo dev --filter=@mcp/docs",
+    "web:dev": "turbo dev --filter=@mcp/web",
     "test": "turbo test",
     "test:build": "turbo test:with-build",
     "test:e2e": "turbo test:e2e",
@@ -51,7 +62,7 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "bun@1.1.17",
+  "packageManager": "pnpm@8.15.0",
   "workspaces": ["apps/*", "packages/*"],
   "trustedDependencies": ["@biomejs/biome", "esbuild", "lefthook"]
 }

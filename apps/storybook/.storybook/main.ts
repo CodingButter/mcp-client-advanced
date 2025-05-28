@@ -1,5 +1,9 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { StorybookConfig } from '@storybook/nextjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const config: StorybookConfig = {
   stories: [
@@ -14,26 +18,6 @@ const config: StorybookConfig = {
     '@storybook/addon-onboarding',
     '@storybook/addon-interactions',
     '@storybook/addon-themes',
-    {
-      name: '@storybook/addon-styling-webpack',
-      options: {
-        rules: [
-          {
-            test: /\.css$/,
-            use: [
-              'style-loader',
-              'css-loader',
-              {
-                loader: 'postcss-loader',
-                options: {
-                  postcssOptions: require('../postcss.config.mjs'),
-                },
-              },
-            ],
-          },
-        ],
-      },
-    },
   ],
   framework: {
     name: '@storybook/nextjs',
@@ -46,8 +30,8 @@ const config: StorybookConfig = {
     if (config.resolve) {
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@repo/ui': path.resolve(__dirname, '../../../packages/ui/src'),
-        '@repo/web': path.resolve(__dirname, '../../../apps/web/src'),
+        '@mcp/ui': path.resolve(__dirname, '../../../packages/ui/src'),
+        '@mcp/web': path.resolve(__dirname, '../../../apps/web/src'),
       };
     }
     return config;

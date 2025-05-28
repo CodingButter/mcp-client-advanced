@@ -1,17 +1,8 @@
 import type { AppProps } from 'next/app';
-
 import { inter } from '../fonts';
-
 import '../globals.css';
 
-// import '@repo/ui/globals.css'; - Import this if you want to use the styles and components from the UI package
-
-import type { ReactElement } from 'react';
-
-export default function Nextra({
-  Component,
-  pageProps,
-}: AppProps): ReactElement {
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <style jsx global>{`
@@ -19,7 +10,7 @@ export default function Nextra({
           --font-inter: ${inter.variable};
         }
       `}</style>
-      <Component foo="bar" {...pageProps} />
+      <Component {...pageProps} />
     </>
   );
 }

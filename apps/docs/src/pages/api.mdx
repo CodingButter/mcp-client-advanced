@@ -1,0 +1,720 @@
+# 📚 API Reference
+
+Complete technical reference for the Advanced MCP Client. This section covers all APIs, configuration options, and integration patterns.
+
+## 🏗️ Core Architecture APIs
+
+### Central Governor API
+
+The Governor provides intelligent orchestration and decision-making capabilities.
+
+#### `Governor.analyzeRequest(request: UserRequest): ExecutionPlan`
+
+Analyzes user requests and creates optimized execution plans.
+
+```typescript
+interface UserRequest {
+  id: string;
+  content: string;
+  context: ConversationContext;
+  priority?: Priority;
+  constraints?: ExecutionConstraints;
+}
+
+interface ExecutionPlan {
+  id: string;
+  strategy: ExecutionStrategy;
+  tasks: Task[];
+  dependencies: Dependency[];
+  estimatedDuration: number;
+  resourceRequirements: ResourceRequirements;
+}
+
+// Example usage
+const request: UserRequest = {
+  id: "req-001",
+  content: "Generate business report with data from CRM, analytics, and sales",
+  context: currentContext,
+  priority: Priority.HIGH
+};
+
+const plan = await governor.analyzeRequest(request);
+console.log(`Execution plan created with ${plan.tasks.length} tasks`);
+```
+
+#### `Governor.optimizeExecution(executionId: string): OptimizationResult`
+
+Dynamically optimizes ongoing execution based on real-time performance data.
+
+```typescript
+interface OptimizationResult {
+  changes: OptimizationChange[];
+  estimatedImprovement: number;
+  appliedAt: Date;
+  reason: string;
+}
+
+// Example usage
+const optimization = await governor.optimizeExecution("exec-001");
+if (optimization.estimatedImprovement > 0.1) {
+  console.log(`Applied optimization: ${optimization.reason}`);
+}
+```
+
+#### `Governor.getDecisionHistory(timeRange?: TimeRange): Decision[]`
+
+Retrieves the Governor's decision history for analysis and debugging.
+
+```typescript
+interface Decision {
+  id: string;
+  timestamp: Date;
+  type: DecisionType;
+  context: any;
+  reasoning: string;
+  outcome: DecisionOutcome;
+}
+
+// Example usage
+const decisions = await governor.getDecisionHistory({
+  start: new Date(Date.now() - 3600000), // Last hour
+  end: new Date()
+});
+```
+
+### Task Scheduler API
+
+The scheduler manages task execution with priority and dependency handling.
+
+#### `Scheduler.scheduleTask(task: Task, options?: ScheduleOptions): Promise<string>`
+
+Schedules a task for execution with optional timing and priority configuration.
+
+```typescript
+interface Task {
+  id: string;
+  type: TaskType;
+  handler: TaskHandler;
+  priority: Priority;
+  dependencies?: string[];
+  timeout?: number;
+  retryPolicy?: RetryPolicy;
+}
+
+interface ScheduleOptions {
+  delay?: number;
+  executeAt?: Date;
+  recurring?: RecurringPattern;
+  maxRetries?: number;
+}
+
+// Example usage
+const taskId = await scheduler.scheduleTask({
+  id: "weather-check",
+  type: TaskType.API_CALL,
+  handler: weatherApiHandler,
+  priority: Priority.MEDIUM,
+  timeout: 5000
+}, {
+  recurring: { pattern: "0 */6 * * *" } // Every 6 hours
+});
+```
+
+#### `Scheduler.createWorkflow(workflow: WorkflowDefinition): Promise<string>`
+
+Creates a complex workflow with multiple tasks and dependencies.
+
+```typescript
+interface WorkflowDefinition {
+  id: string;
+  name: string;
+  description?: string;
+  tasks: Task[];
+  dependencies: WorkflowDependency[];
+  strategy: ExecutionStrategy;
+}
+
+// Example usage
+const workflowId = await scheduler.createWorkflow({
+  id: "morning-routine",
+  name: "Morning Information Gathering",
+  tasks: [weatherTask, calendarTask, emailTask, newsTask],
+  dependencies: [],
+  strategy: ExecutionStrategy.PARALLEL
+});
+```
+
+### Thread Pool API
+
+The thread pool manages concurrent task execution and resource allocation.
+
+#### `ThreadPool.getStatus(): ThreadPoolStatus`
+
+Returns current thread pool status and utilization metrics.
+
+```typescript
+interface ThreadPoolStatus {
+  totalThreads: number;
+  activeThreads: number;
+  queuedTasks: number;
+  completedTasks: number;
+  averageExecutionTime: number;
+  cpuUtilization: number;
+  memoryUtilization: number;
+}
+
+// Example usage
+const status = threadPool.getStatus();
+console.log(`${status.activeThreads}/${status.totalThreads} threads active`);
+```
+
+#### `ThreadPool.configure(config: ThreadPoolConfig): void`
+
+Configures thread pool parameters for optimal performance.
+
+```typescript
+interface ThreadPoolConfig {
+  minThreads: number;
+  maxThreads: number;
+  idleTimeout: number;
+  queueSize: number;
+  scalingPolicy: ScalingPolicy;
+}
+
+// Example usage
+threadPool.configure({
+  minThreads: 4,
+  maxThreads: 16,
+  idleTimeout: 30000,
+  queueSize: 100,
+  scalingPolicy: ScalingPolicy.ADAPTIVE
+});
+```
+
+## 💾 Context Management APIs
+
+### Session Manager API
+
+Manages persistent conversation context and session state.
+
+#### `SessionManager.createSession(config?: SessionConfig): Promise<Session>`
+
+Creates a new conversation session with optional configuration.
+
+```typescript
+interface SessionConfig {
+  persistContext: boolean;
+  summarizationThreshold: number;
+  maxContextSize: number;
+  encryption?: EncryptionConfig;
+}
+
+interface Session {
+  id: string;
+  createdAt: Date;
+  lastAccessedAt: Date;
+  context: ConversationContext;
+  metadata: SessionMetadata;
+}
+
+// Example usage
+const session = await sessionManager.createSession({
+  persistContext: true,
+  summarizationThreshold: 10000,
+  maxContextSize: 50000
+});
+```
+
+#### `SessionManager.updateContext(sessionId: string, update: ContextUpdate): Promise<void>`
+
+Updates session context with new information.
+
+```typescript
+interface ContextUpdate {
+  messages?: Message[];
+  variables?: Record<string, any>;
+  metadata?: Record<string, any>;
+  merge: boolean;
+}
+
+// Example usage
+await sessionManager.updateContext(session.id, {
+  messages: [newUserMessage, newAssistantMessage],
+  variables: { lastWeatherCheck: new Date() },
+  merge: true
+});
+```
+
+### Context Store API
+
+Low-level context storage and retrieval operations.
+
+#### `ContextStore.get(key: string): Promise<any>`
+
+Retrieves stored context data by key.
+
+```typescript
+// Example usage
+const userPreferences = await contextStore.get(`user:${userId}:preferences`);
+```
+
+#### `ContextStore.set(key: string, value: any, options?: StorageOptions): Promise<void>`
+
+Stores context data with optional expiration and encryption.
+
+```typescript
+interface StorageOptions {
+  ttl?: number;
+  encrypt?: boolean;
+  tags?: string[];
+}
+
+// Example usage
+await contextStore.set(`session:${sessionId}:context`, contextData, {
+  ttl: 3600000, // 1 hour
+  encrypt: true,
+  tags: ['session', 'temporary']
+});
+```
+
+## 🎯 Task Management APIs
+
+### Task Execution API
+
+Direct task execution and monitoring capabilities.
+
+#### `TaskExecutor.execute(task: Task): Promise<TaskResult>`
+
+Executes a single task and returns the result.
+
+```typescript
+interface TaskResult {
+  id: string;
+  status: TaskStatus;
+  result?: any;
+  error?: Error;
+  executionTime: number;
+  resourceUsage: ResourceUsage;
+}
+
+// Example usage
+const result = await taskExecutor.execute({
+  id: "api-call-001",
+  type: TaskType.API_CALL,
+  handler: async () => {
+    return await fetch('https://api.example.com/data');
+  },
+  priority: Priority.HIGH
+});
+```
+
+#### `TaskExecutor.executeParallel(tasks: Task[]): Promise<TaskResult[]>`
+
+Executes multiple tasks in parallel and returns all results.
+
+```typescript
+// Example usage
+const results = await taskExecutor.executeParallel([
+  weatherTask,
+  calendarTask,
+  emailTask
+]);
+
+// Results are returned in the same order as input tasks
+const [weatherResult, calendarResult, emailResult] = results;
+```
+
+### Task Monitoring API
+
+Monitor and control task execution in real-time.
+
+#### `TaskMonitor.getActiveTasks(): Promise<ActiveTask[]>`
+
+Returns all currently executing tasks.
+
+```typescript
+interface ActiveTask {
+  id: string;
+  name: string;
+  status: TaskStatus;
+  progress: number;
+  startedAt: Date;
+  estimatedCompletion: Date;
+  thread: string;
+}
+
+// Example usage
+const activeTasks = await taskMonitor.getActiveTasks();
+activeTasks.forEach(task => {
+  console.log(`${task.name}: ${task.progress}% complete`);
+});
+```
+
+#### `TaskMonitor.cancelTask(taskId: string): Promise<boolean>`
+
+Cancels a running or queued task.
+
+```typescript
+// Example usage
+const cancelled = await taskMonitor.cancelTask("long-running-task-001");
+if (cancelled) {
+  console.log("Task cancelled successfully");
+}
+```
+
+## 🔧 Configuration APIs
+
+### System Configuration
+
+Configure global system behavior and performance parameters.
+
+#### `Config.load(configPath?: string): Promise<SystemConfig>`
+
+Loads system configuration from file or defaults.
+
+```typescript
+interface SystemConfig {
+  governor: GovernorConfig;
+  scheduler: SchedulerConfig;
+  threadPool: ThreadPoolConfig;
+  security: SecurityConfig;
+  monitoring: MonitoringConfig;
+}
+
+// Example usage
+const config = await Config.load('./config/production.json');
+```
+
+#### `Config.update(updates: Partial<SystemConfig>): Promise<void>`
+
+Updates system configuration at runtime.
+
+```typescript
+// Example usage
+await Config.update({
+  threadPool: {
+    maxThreads: 32,
+    scalingPolicy: ScalingPolicy.AGGRESSIVE
+  },
+  governor: {
+    optimizationMode: OptimizationMode.PERFORMANCE
+  }
+});
+```
+
+### Environment Configuration
+
+Manage environment-specific settings and external service credentials.
+
+```typescript
+interface EnvironmentConfig {
+  llm: {
+    provider: 'openai' | 'anthropic' | 'local';
+    apiKey?: string;
+    endpoint?: string;
+    model?: string;
+  };
+  external: {
+    weatherApi?: ExternalServiceConfig;
+    calendarApi?: ExternalServiceConfig;
+    emailService?: ExternalServiceConfig;
+  };
+  storage: {
+    type: 'memory' | 'redis' | 'postgresql';
+    connectionString?: string;
+  };
+}
+
+// Example configuration
+const envConfig: EnvironmentConfig = {
+  llm: {
+    provider: 'openai',
+    apiKey: process.env.OPENAI_API_KEY,
+    model: 'gpt-4'
+  },
+  external: {
+    weatherApi: {
+      endpoint: 'https://api.openweathermap.org/data/2.5',
+      apiKey: process.env.WEATHER_API_KEY,
+      timeout: 5000
+    }
+  },
+  storage: {
+    type: 'redis',
+    connectionString: process.env.REDIS_URL
+  }
+};
+```
+
+## 🛡️ Security APIs
+
+### Authentication API
+
+Manage user authentication and session security.
+
+#### `Auth.authenticate(credentials: Credentials): Promise<AuthResult>`
+
+Authenticates users and creates secure sessions.
+
+```typescript
+interface Credentials {
+  type: 'password' | 'token' | 'certificate';
+  identifier: string;
+  secret: string;
+}
+
+interface AuthResult {
+  success: boolean;
+  sessionToken?: string;
+  expiresAt?: Date;
+  permissions?: Permission[];
+  error?: AuthError;
+}
+
+// Example usage
+const authResult = await auth.authenticate({
+  type: 'token',
+  identifier: 'user@example.com',
+  secret: 'api-token-here'
+});
+```
+
+### Permissions API
+
+Manage dynamic permissions and access control.
+
+#### `Permissions.checkAccess(action: Action, context: SecurityContext): Promise<AccessResult>`
+
+Checks if an action is permitted in the current context.
+
+```typescript
+interface Action {
+  type: ActionType;
+  resource: string;
+  details?: any;
+}
+
+interface SecurityContext {
+  user: User;
+  session: Session;
+  environment: EnvironmentInfo;
+  riskLevel: RiskLevel;
+}
+
+// Example usage
+const accessResult = await permissions.checkAccess({
+  type: ActionType.FILE_WRITE,
+  resource: '/project/config.json'
+}, currentSecurityContext);
+
+if (accessResult.permitted) {
+  // Proceed with action
+} else {
+  // Request user approval or deny
+}
+```
+
+## 📊 Monitoring APIs
+
+### Metrics API
+
+Collect and analyze system performance metrics.
+
+#### `Metrics.collect(category?: MetricCategory): Promise<MetricCollection>`
+
+Collects current system metrics.
+
+```typescript
+interface MetricCollection {
+  timestamp: Date;
+  system: SystemMetrics;
+  tasks: TaskMetrics;
+  performance: PerformanceMetrics;
+  custom: Record<string, any>;
+}
+
+// Example usage
+const metrics = await Metrics.collect(MetricCategory.PERFORMANCE);
+console.log(`Average task execution: ${metrics.tasks.averageExecutionTime}ms`);
+```
+
+#### `Metrics.createAlert(condition: AlertCondition): Promise<string>`
+
+Creates custom alerts based on metric conditions.
+
+```typescript
+interface AlertCondition {
+  metric: string;
+  operator: ComparisonOperator;
+  threshold: number;
+  duration: number;
+  action: AlertAction;
+}
+
+// Example usage
+const alertId = await Metrics.createAlert({
+  metric: 'threadPool.utilization',
+  operator: ComparisonOperator.GREATER_THAN,
+  threshold: 0.9,
+  duration: 300000, // 5 minutes
+  action: AlertAction.NOTIFY_ADMIN
+});
+```
+
+## 🔌 Extension APIs
+
+### Plugin System
+
+Extend functionality with custom plugins and integrations.
+
+#### `PluginManager.register(plugin: Plugin): Promise<void>`
+
+Registers a new plugin with the system.
+
+```typescript
+interface Plugin {
+  id: string;
+  name: string;
+  version: string;
+  initialize: (context: PluginContext) => Promise<void>;
+  handlers: Record<string, PluginHandler>;
+  capabilities: PluginCapability[];
+}
+
+// Example plugin
+const weatherPlugin: Plugin = {
+  id: 'weather-enhanced',
+  name: 'Enhanced Weather Service',
+  version: '1.0.0',
+  initialize: async (context) => {
+    // Plugin initialization
+  },
+  handlers: {
+    'weather.forecast': forecastHandler,
+    'weather.current': currentWeatherHandler
+  },
+  capabilities: [PluginCapability.API_CALLS, PluginCapability.CACHING]
+};
+
+await pluginManager.register(weatherPlugin);
+```
+
+### Custom Tool Integration
+
+Add custom MCP tools to the system.
+
+#### `ToolRegistry.addTool(tool: CustomTool): Promise<void>`
+
+Registers a custom tool for use in workflows.
+
+```typescript
+interface CustomTool {
+  id: string;
+  name: string;
+  description: string;
+  inputSchema: JSONSchema;
+  outputSchema: JSONSchema;
+  handler: ToolHandler;
+  metadata: ToolMetadata;
+}
+
+// Example custom tool
+const customAnalyticsTool: CustomTool = {
+  id: 'analytics.custom-report',
+  name: 'Custom Analytics Report',
+  description: 'Generates custom analytics reports',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      dateRange: { type: 'string' },
+      metrics: { type: 'array', items: { type: 'string' } }
+    }
+  },
+  outputSchema: {
+    type: 'object',
+    properties: {
+      report: { type: 'object' },
+      generatedAt: { type: 'string' }
+    }
+  },
+  handler: async (input) => {
+    // Tool implementation
+    return generateReport(input);
+  },
+  metadata: {
+    category: 'analytics',
+    tags: ['reporting', 'custom'],
+    estimatedDuration: 30000
+  }
+};
+
+await toolRegistry.addTool(customAnalyticsTool);
+```
+
+## 🎛️ CLI Integration
+
+### Command Line Interface
+
+Programmatically interact with the CLI interface.
+
+#### `CLI.executeCommand(command: string): Promise<CommandResult>`
+
+Executes CLI commands programmatically.
+
+```typescript
+interface CommandResult {
+  success: boolean;
+  output: string;
+  error?: string;
+  executionTime: number;
+}
+
+// Example usage
+const result = await CLI.executeCommand('/status');
+console.log(result.output);
+
+const govStatus = await CLI.executeCommand('/governor status');
+console.log(`Governor: ${govStatus.output}`);
+```
+
+## 🔄 Event System
+
+### Event Handling
+
+Subscribe to and emit system events for custom integrations.
+
+#### `EventEmitter.on(event: string, handler: EventHandler): void`
+
+Subscribes to system events.
+
+```typescript
+// Example event handlers
+eventEmitter.on('task.completed', (event: TaskCompletedEvent) => {
+  console.log(`Task ${event.taskId} completed in ${event.executionTime}ms`);
+});
+
+eventEmitter.on('governor.optimization', (event: OptimizationEvent) => {
+  console.log(`Governor applied optimization: ${event.description}`);
+});
+
+eventEmitter.on('system.error', (event: SystemErrorEvent) => {
+  console.error(`System error: ${event.error.message}`);
+});
+```
+
+#### `EventEmitter.emit(event: string, data: any): void`
+
+Emits custom events for system integration.
+
+```typescript
+// Emit custom events
+eventEmitter.emit('custom.workflow.started', {
+  workflowId: 'workflow-001',
+  startedBy: 'user@example.com',
+  timestamp: new Date()
+});
+```
+
+---
+
+This API reference provides comprehensive coverage of all Advanced MCP Client capabilities. For implementation examples and best practices, see the [Examples](/examples) section.
